@@ -12,11 +12,11 @@ source('~/Documents/SaezGrp/SignallingSingleCell/Aidan/macroInput/R/parseImageJ2
 source('~/Documents/SaezGrp/SignallingSingleCell/Aidan/macroInput/R/multiplot.R') # updated import
 source('~/Documents/SaezGrp/SignallingSingleCell/Aidan/macroInput/R/meanFRET2.R')
 
-setwd("~/Documents/SaezGrp/SignallingSingleCell/Aidan/macroInput")
+setwd("~/Documents/SaezGrp/LocalGitRepo/SC_PoLeMo/")
 document(".")
 load_all(".")
 
-load("vignette-4_results.RData")
+load("~/Documents/SaezGrp/LocalGitRepo/SC_PoLeMo/vignette-4_results.RData")
 #load("response_distribution.RData")
 plotDir='./inst/plots/'
 
