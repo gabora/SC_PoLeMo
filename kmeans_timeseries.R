@@ -1,8 +1,8 @@
 # K-means clustering of timeseries
 
 
-setwd("~/Documents/SaezGrp/SignallingSingleCell/Aidan/macroInput")
-
+setwd("~/Documents/SaezGrp/LocalGitRepo/SC_PoLeMo")
+source("handleMissingData.R")
 load("allData.RData")
 
 plotDir='./inst/plots/'
@@ -29,6 +29,8 @@ for(a in 1:length(allData)) {
         }
     names(mydata)<- levels(utraceID)[usedtrace]
 
+    
+    mydata <- handleMissingData(mydata)
 # mydata.na <- na.omit(mydata) # listwise deletion of missing
 #mydata <- scale(mydata) # standardize variables
 
@@ -50,8 +52,9 @@ fit <- kmeans(mydata, 2,iter.max = 5000, nstart = 200, algorithm = "Hartigan-Won
 #mydata.clustered <- data.frame(mydata, fit$cluster)
 
 
-clustered.data = data.frame(subset(datasheet,subset = is.element(datasheet$traceID, levels(utraceID)[usedtrace])),rep(fit$cluster,each = length(time)))
+#clustered.data = data.frame(subset(datasheet,subset = is.element(datasheet$traceID, levels(utraceID)[usedtrace])),rep(fit$cluster,each = length(time)))
 
+clustered.data = melt(mydata )
 t = names(clustered.data)
 t[[12]] = "clusterID"
 names(clustered.data) = t
