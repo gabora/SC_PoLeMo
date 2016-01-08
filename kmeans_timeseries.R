@@ -8,63 +8,50 @@ load("allData.RData")
 plotDir='./inst/plots/'
 
 for(a in 1:length(allData)) {
-    p=list();
+    
     plot.index = 0
+    pdf(file = paste(plotDir, names(allData)[a],"_clustered_reponse",".pdf", sep=""), width=8, height=6)
     
     for(b in 1:length(allData[[a]])) {
+        p=list();
         plot.index = plot.index +1 
         datasheet = allData[[a]][[b]]
-
-        utraceID =  unique(datasheet$traceID)
 
         time = unique(datasheet$time)
         #ggplot(data = datasheet[,c("time","normValue","traceID")], aes(time, normValue, group=traceID, color=traceID )) + geom_line() 
 
-        mydata= subset(x=datasheet,subset=traceID==utraceID[1],select="normValue")
-        usedtrace = utraceID[[1]]
+        mydata <- acast(datasheet, time ~ traceID, value.var = "normValue")
+        #mydata <- cbind(time,mydata)
+        mydata <- handleMissingData(mydata)
+       
+        # transpose for clustering
+        mydata = t(mydata)
 
-        for(iID in 2:length(utraceID)){   #
-            mydata= cbind(mydata,subset(x=datasheet,subset=traceID==utraceID[iID],select="normValue"))
-            usedtrace = cbind(usedtrace,utraceID[[iID]])
-        }
-    names(mydata)<- levels(utraceID)[usedtrace]
+        # Determine number of clusters
+        wss = c()
+        for (i in 1:5) wss[i] <- sum(kmeans(mydata, 
+                                             centers=i,nstart = 20,iter.max = 100)$withinss)
+        p[[1]] <- ggplot(data = data.frame(x=1:5,y=wss),aes(x=x,y=y )) + geom_line() + geom_point() +
+            xlab("Number of Clusters") + ylab("Within groups sum of squares")
+
+        # K-Means Cluster Analysis of data 
+        fit <- kmeans(mydata, 2,iter.max = 5000, nstart = 200, algorithm = "Hartigan-Wong" ) # 2 cluster solutio n    "Hartigan-Wong"
+
+        # melt the data
+        mydata = melt(mydata)
+        names(mydata) = c("traceID","Time","normValue")
+            
+        clusters = data.frame(traceID = names(fit$cluster),cluster = fit$cluster)
+        clustered.data = join(mydata,clusters, by="traceID")
 
     
-    mydata <- handleMissingData(mydata)
-# mydata.na <- na.omit(mydata) # listwise deletion of missing
-#mydata <- scale(mydata) # standardize variables
-
-# transpose for clustering
-mydata = t(mydata)
-
-# Determine number of clusters
-# wss <- (ncol(mydata)-1)*sum(apply(mydata,1,var))
-# for (i in 2:15) wss[i] <- sum(kmeans(mydata, 
-#                                      centers=i,nstart = 20,iter.max = 100)$withinss)
-# plot(1:15, wss, type="b", xlab="Number of Clusters",
-#      ylab="Within groups sum of squares")
-
-# K-Means Cluster Analysis
-fit <- kmeans(mydata, 2,iter.max = 5000, nstart = 200, algorithm = "Hartigan-Wong" ) # 2 cluster solutio n    "Hartigan-Wong"
- # get cluster means 
-#aggregate(mydata,by=list(fit$cluster),FUN=mean)
-# append cluster assignment
-#mydata.clustered <- data.frame(mydata, fit$cluster)
-
-
-#clustered.data = data.frame(subset(datasheet,subset = is.element(datasheet$traceID, levels(utraceID)[usedtrace])),rep(fit$cluster,each = length(time)))
-
-clustered.data = melt(mydata )
-t = names(clustered.data)
-t[[12]] = "clusterID"
-names(clustered.data) = t
-
-p[[plot.index]] <-  ggplot(data = clustered.data, aes( colour = as.factor(clusterID)) ) + geom_line(aes(x = time, y = normValue, group=traceID)) + theme(legend.position="none")
+        p[[2]] <-  ggplot(data = clustered.data, aes( colour = as.factor(cluster)) ) + geom_line(aes(x = Time, y = normValue, group=traceID)) + theme(legend.position="none") 
+        multiplot(plotlist = p,cols=2)
 }
 
     
-    pdf(file = paste(plotDir, names(allData)[a],"_clustered_reponse",".pdf", sep=""), width=8, height=6)
+    
 
-    multiplot(plotlist = p,cols=3)
+    
     dev.off()
 }
